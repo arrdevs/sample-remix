@@ -4,14 +4,15 @@ pragma experimental ABIEncoderV2;
 
 contract OrderTicketFootballOnline{
 
-    //definisikan variable
+    //define variable
     mapping(address => Viewer) mappingViewer;
     mapping(string => uint) ticketPrice;
     mapping(string => int) ticketAvailable;
+    uint public fund = 0;
 
     event logNontonBola(Viewer viewer);
     enum TicketType {VIP, Executive, Regular}
-    Viewer ticketOrder;
+    Viewer public ticketOrder;
 
     uint indexVip=1;
     uint indexExecutive=1;
@@ -27,12 +28,12 @@ contract OrderTicketFootballOnline{
 
     //define default value
     constructor() {
-        //jumlah tiket yang tersedia
+        //number of available tickets
         ticketAvailable["vip"] = 5;
         ticketAvailable["executive"] = 5;
         ticketAvailable["regular"] = 5;
 
-        //harga tiket masing masing kelas
+        //prices of tickets
         ticketPrice["vip"] = 3 ether;
         ticketPrice["executive"] = 2 ether;
         ticketPrice["regular"] = 1 ether;
@@ -78,11 +79,28 @@ contract OrderTicketFootballOnline{
 
     //process buy ticket
     function buyTicket(TicketType _ticket) payable external checkAvailabilityTicket(_ticket) checkTicketPayment(_ticket) checkTicketisPurchased{
-        owner = msg.sender;
-        owner.transfer(msg.value);
+        uint totalFee = 0;
+        
+        if(_ticket == TicketType.VIP){
+            totalFee = ticketPrice["vip"];
+        } else if(_ticket == TicketType.Executive){
+            totalFee = ticketPrice["executive"];
+        } else if(_ticket == TicketType.Regular){
+            totalFee = ticketPrice["Regular"];
+        }
+        uint change = msg.value - totalFee;
+        payable(msg.sender).transfer(change);
+        fund = fund + totalFee;
+
         ticketOrder.buyTicket = true;
         mappingViewer[owner] = ticketOrder;
         emit logNontonBola(ticketOrder);
+    }
+
+    function withDrawBalance() public payable{
+        owner = msg.sender;
+        owner.transfer(fund);
+        fund = 0;
     }
 
     //ticket info
@@ -91,22 +109,22 @@ contract OrderTicketFootballOnline{
     }
 
     //check remaining tickets for Executive tickets
-    function remainingExecutiveTicket() public view returns(int sisa){
+    function remainingExecutiveTicket() public view returns(int rem){
         return ticketAvailable["executive"];
     }
 
     //check remaining tickets for VIP tickets
-    function remainingVIPTicket() public view returns(int sisa){
+    function remainingVIPTicket() public view returns(int rem){
         return ticketAvailable["vip"];
     }
 
     //check remaining tickets for Regular tickets
-    function remainingRegularTicket() public view returns(int sisa){
+    function remainingRegularTicket() public view returns(int rem){
         return ticketAvailable["regular"];
     }
 
-    //========================= utilisasi tambahan ===============================
-    //convert dari integer ke String
+    //========================= addition only ===============================
+    //convert integer to string
     function integerToString(uint _i) internal pure returns (string memory) {
         if (_i == 0) {
             return "0";
